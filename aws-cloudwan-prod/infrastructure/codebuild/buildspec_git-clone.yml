@@ -1,0 +1,27 @@
+version: 0.2
+
+env:
+  variables:
+    CODE_SRC_DIR: "."
+    ENV: ""
+    BRANCH_OVERRIDE: ""
+    GITLAB_TOKEN_SECRET_NAME: ""
+    GIT_PROVIDER: "gitlab.com/redcentric/fns/terraform/customers/14545-hays/"
+    GIT_REPO: "aws-cloudwan-prod"
+    GIT_TOKEN_ID: "oauth2"
+
+phases:
+  build:
+    commands:
+      - echo ${GITLAB_TOKEN_SECRET_NAME}
+      - token=$(aws secretsmanager get-secret-value --secret-id ${GITLAB_TOKEN_SECRET_NAME} --output text --query "SecretString")
+      - git clone "https://${GIT_TOKEN_ID}:${token}@${GIT_PROVIDER}${GIT_REPO}.git"
+      - cd ${GIT_REPO}
+      - git checkout ${BRANCH_OVERRIDE}
+      - cd ..
+      - rsync -av ${GIT_REPO}/. .
+      - rm -rf ${GIT_REPO}
+
+artifacts:
+  files:
+    - '**/*'
