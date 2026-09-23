@@ -1,0 +1,78 @@
+Content-Type: multipart/mixed; boundary="==AWS=="
+MIME-Version: 1.0
+
+--==AWS==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+
+config system global
+set hostname ${hostname}
+set admin-sport ${adminsport}
+end
+config system interface
+edit port1
+set mode dhcp
+set allowaccess ping https ssh fgfm
+next
+edit port2
+set mode dhcp
+set allowaccess ping probe-response
+set defaultgw disable
+next
+end
+config system probe-response
+set mode http-probe
+end
+config system geneve
+edit "awsgeneve"
+set interface "port2"
+set type ppp
+set remote-ip ${endpointip}
+end
+config system zone
+edit INET
+set interface port1
+next
+edit LAN
+set interface port2
+next
+edit AWS
+set interface awsgeneve 
+next
+end
+config firewall policy
+edit 1
+set name "test"
+set srcintf "AWS"
+set dstintf "AWS"
+set srcaddr "all"
+set dstaddr "all"
+set action accept
+set schedule "always"
+set service "ALL"
+set logtraffic all
+next
+end
+config router static
+edit 1
+set device awsgeneve
+next
+edit 2
+set device port2
+set dst ${vpc_cidr} 
+set gateway ${internal_gateway}
+next
+edit 3
+set device awsgeneve
+set dst 10.0.0.0/8
+next
+edit 4
+set device awsgeneve
+set dst 172.16.0.0/12
+next
+edit 5
+set device awsgeneve
+set dst 192.168.0.0/16
+end
+
+--==AWS==--
